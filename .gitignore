@@ -1,15 +1,1 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
+# Exclude local cache database files\nbackend/ellipse_cache/*.db*\n# Ignore root contents not needed in Git\nellipse_cache/\ngo.mod\ngo.sum\nmain.go\n
