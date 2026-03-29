@@ -82,3 +82,5 @@ This repo maintains a clean split between these two components and includes a lo
 - Replace hardcoded `backendBaseUrl` with runtime config or build flavor.
 - Secure TMDb key using build config, not inline source.
 - Add integration tests for the backend playback endpoint.
+
+## Prowller service (required for backend torrent search)\n\n- Prowller is used to find magnet links / torrent sources for the backend.\n- Ensure prowller is installed and running before launching the backend.\n\n### Start prowller\n1. Clone/checkout prowller repo or use your local binary.\n2. Run: prowller --port 9090 (example)\n3. Configure backend to use http://localhost:9090 for torrent lookups in ackend/main.go if necessary.\n\n### Backend startup with prowller\n- Start prowller first.\n- Then run backend (go run main.go).\n- The backend will query prowller lookup endpoint and provide playable streams to app.\n
