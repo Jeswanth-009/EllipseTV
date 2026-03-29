@@ -1,86 +1,107 @@
-# EllipseTV
+# EllipseTV: Fullstack Streaming Platform
 
-## Project summary
+## Overview
+EllipseTV is a fullstack open-source streaming platform that lets you discover, search, and play movies and TV shows using torrents. It consists of:
 
-EllipseTV is an end-to-end media discovery and playback platform. It includes:
+- **Android TV App** (Jetpack Compose, ExoPlayer): Modern, TV-friendly UI for browsing and playback.
+- **Go Backend**: Handles search, torrent resolution, and streaming proxy.
+- **Prowller Service**: External service for finding magnet links/torrents, required by the backend.
 
-1. Android app frontend (`app/`) built with Jetpack Compose and ExoPlayer.
-2. Go backend (`backend/`) that serves torrent/media search and playback proxy endpoints.
+---
 
-This repo maintains a clean split between these two components and includes a local cache for media metadata.
+## Technology Stack
+- **Frontend:** Android (Kotlin, Jetpack Compose, ExoPlayer)
+- **Backend:** Go (Golang)
+- **Torrent Search:** Prowller (Node.js or Go, external service)
+- **Data Source:** TMDb API (for trending, details, etc.)
 
-## Android App (UI)
+---
 
-### Location
-- `app/src/main/java/com/example/ellipsetv/MainActivity.kt`
+## 1. Android App
 
 ### Features
-- Home screen: fetches “Trending Movies” and “Trending TV” from TMDb.
-- Details screen: movie/tv details, ratings, cast, seasons, and episodes.
-- Player screen: forwards selected content query to backend for playback.
-- TV-friendly focusable UI with keyboard/d-pad support.
+- Home: Trending Movies & TV (from TMDb)
+- Details: Ratings, cast, seasons, episodes
+- Player: Streams video from backend
+- TV-optimized navigation (D-pad/focus)
 
-### Configuration
-- TMDb API key is stored in `TmdbClient.API_KEY` (replace with your own key).
-- Backend URL is configured in `AppNavigation()` as `backendBaseUrl`:
-  - Example: `http://192.168.1.33:8080/play?q=` for LAN usage.
-  - For emulator use: `http://10.0.2.2:8080/play?q=`.
+### Setup
+1. Open in Android Studio
+2. Set your TMDb API key in `TmdbClient.API_KEY`
+3. Set `backendBaseUrl` in `AppNavigation()` to your backend’s IP (e.g. `http://192.168.1.33:8080/play?q=`)
+4. Build and run on Android TV or emulator
 
-### Execution
-1. Open Android Studio.
-2. Import project and sync Gradle.
-3. Run on emulator or Android TV device.
+---
 
-## Backend service
+## 2. Backend (Go)
 
-### Location
-- `backend/main.go`
-- `backend/go.mod`, `backend/go.sum`
-- `backend/ellipse_cache/` (cache for torrent DB and metadata)
+### Features
+- Receives search queries from app
+- Uses Prowller to find torrents/magnets
+- Streams video to app via HTTP
+- Caches torrent metadata in `backend/ellipse_cache/`
 
-### Endpoint behavior
-- `GET /play?q=<encoded search query>`
-  - The app sends queries like `"Blade Runner 2049 1080p"` using URL-encoded strings.
-  - Backend resolves torrent / video source and returns proxied playable stream URL.
-
-### Run backend
-1. Ensure Go 1.20+ is installed.
-2. Run in terminal:
-   ```pwsh
-   cd c:\ellipsetv-backend\backend
+### Setup & Run
+1. Install Go 1.20+
+2. In terminal:
+   \`\`\`sh
+   cd backend
    go mod tidy
-   go test ./...
    go run main.go
-   ```
-3. You should see server listening on configured port (default `8080`).
+   \`\`\`
+3. Backend listens on port 8080 by default
 
-## How to use end-to-end
+---
 
-1. Start backend (`go run main.go`). Ensure it is accessible from the Android device.
-2. Configure `backendBaseUrl` in `MainActivity` with your backend host (local IP or emulator alias).
-3. Install and run Android app.
-4. From home screen, select media and press Play. The app navigates to player route, and the backend fetches/streams the chosen media.
+## 3. Prowller Service (Torrent Search Engine)
 
-## Backend caching and persistence
+### What is Prowller?
+Prowller is a separate open-source service that scrapes public torrent sites and provides a search API for magnet links. The backend depends on it to resolve user queries into playable torrents.
 
-- `backend/ellipse_cache/` stores local torrent DB files (`.torrent.db`, `.torrent.db-wal` etc.).
-- `.gitignore` includes patterns to avoid committing large or dynamically generated cache DB files:
-  - `backend/ellipse_cache/*.db*`
+### Why is it needed?
+- The backend does NOT scrape torrents itself; it delegates to Prowller for safety and modularity.
+- Without Prowller running, the backend cannot find or stream any content.
 
-## Git workflow
+### How to Install & Run
+1. Clone the Prowller repo (https://github.com/Jeswanth-009/prowller or your fork)
+2. Install dependencies (see Prowller’s README)
+3. Start the service:
+   \`\`\`sh
+   prowller --port 9090
+   \`\`\`
+4. By default, backend expects Prowller at `http://localhost:9090` (edit in `main.go` if needed)
 
-- Keep `main` updated:
-  - `git checkout main`
-  - `git pull origin main`
-- After changes:
-  - `git add backend app README.md .gitignore`
-  - `git commit -m "Update EllipseTV docs and features"`
-  - `git push origin main`
+### Integration
+- Start Prowller **before** the backend
+- Backend will call Prowller’s API to get magnet links for search queries
+- If Prowller is down, the app will not find or play any content
 
-## Notes and improvements
+---
 
-- Replace hardcoded `backendBaseUrl` with runtime config or build flavor.
-- Secure TMDb key using build config, not inline source.
-- Add integration tests for the backend playback endpoint.
+## End-to-End Usage
+1. Start Prowller service
+2. Start backend (`go run main.go`)
+3. Launch Android app (on TV or emulator)
+4. Browse, search, and play content — the app talks to backend, backend talks to Prowller, and streams are proxied to the app
 
-## Prowller service (required for backend torrent search)\n\n- Prowller is used to find magnet links / torrent sources for the backend.\n- Ensure prowller is installed and running before launching the backend.\n\n### Start prowller\n1. Clone/checkout prowller repo or use your local binary.\n2. Run: prowller --port 9090 (example)\n3. Configure backend to use http://localhost:9090 for torrent lookups in ackend/main.go if necessary.\n\n### Backend startup with prowller\n- Start prowller first.\n- Then run backend (go run main.go).\n- The backend will query prowller lookup endpoint and provide playable streams to app.\n
+---
+
+## Example Workflow
+- User selects “Blade Runner 2049” in the app
+- App sends search query to backend: `/play?q=Blade%20Runner%202049%201080p`
+- Backend asks Prowller for matching torrents
+- Backend picks a source, starts streaming, and proxies video to the app’s player
+
+---
+
+## Notes
+- Do NOT expose backend or Prowller to the public internet without security
+- Cache folder (`backend/ellipse_cache/`) stores torrent DBs and metadata (large files are .gitignored)
+- Replace hardcoded URLs and API keys for production
+
+---
+
+## Contributing & Issues
+- PRs and issues welcome!
+- See each component’s folder for more details
+'; Set-Content -Path README.md -Value $readme -Encoding UTF8; git add README.md; git commit -m "Rewrite README: fullstack, prowller, usage, stack, workflow"; git push origin main
