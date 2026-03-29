@@ -63,7 +63,7 @@ Prowller is a separate open-source service that scrapes public torrent sites and
 - Without Prowller running, the backend cannot find or stream any content.
 
 ### How to Install & Run
-1. Clone the Prowller repo (https://github.com/Jeswanth-009/prowller or your fork)
+1. Clone the Prowller repo ([https://github.com/Prowlarr/Prowlarr] or your fork)
 2. Install dependencies (see Prowller’s README)
 3. Start the service:
    \`\`\`sh
